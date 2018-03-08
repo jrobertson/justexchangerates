@@ -16,7 +16,7 @@ class JustExchangeRates
 
     @url, @base, @debug = api, base, debug
     
-    filename = 'justexchangerates.json'    
+    filename = 'justexchangerates_' + base.downcase + '.json'    
     @cache_filepath = File.join(cache_path, filename)
       
     h = if cache_refresh then      
