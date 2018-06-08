@@ -5,16 +5,20 @@
 require 'json'
 require 'open-uri'
 require 'chronic_duration'
+require 'open_exchange_rates'
 
+
+# Note: To use this gem you need an **app id** which you can get when 
+# registering for free from https://openexchangerates.org/signup/free
 
 class JustExchangeRates
 
   attr_reader *%i(base date rates)
 
-  def initialize(api:'https://api.fixer.io/latest?base=', base: 'USD', 
-                 cache_refresh: '1 week', cache_path: '.', debug: false)
+  def initialize(base: 'USD', cache_refresh: '1 week', cache_path: '.', \
+                 debug: false, app_id: nil)
 
-    @url, @base, @debug = api, base, debug
+    @base, @debug, @app_id, @cache_refresh = base, debug, app_id, cache_refresh
     
     filename = 'justexchangerates_' + base.downcase + '.json'    
     @cache_filepath = File.join(cache_path, filename)
@@ -23,60 +27,57 @@ class JustExchangeRates
             
       if File.exists? @cache_filepath then
         
-        h2 = JSON.parse(File.read @cache_filepath)
-        seconds = ChronicDuration.parse(cache_refresh) 
-
-        if (Time.parse(h2['date']) + seconds) < Time.now then
-          fetch_rates
-        else
-          puts 'fetching rates from local cache ...' if @debug
-          h2
-        end
+        JSON.parse(File.read(@cache_filepath), {:symbolize_names => true})
         
       else
-        fetch_rates
+        {base: @base, date: Time.now, rates: {}}
       end        
-      
-    else
-      
-      fetch_rates
-      
+            
     end
     
-
-    @base, @date, @rates = h['base'], h['date'], h['rates']    
+    puts 'h: ' + h.inspect if debug
+    
+    @base, @date, @rates = h[:base], h[:date], h[:rates]    
   
   end
 
   def rate(currency)
-    @rates[currency.upcase]
+    
+    if @rates.has_key? currency.upcase.to_sym then
+      
+      seconds = ChronicDuration.parse(@cache_refresh) 
+      puts 'seconds: ' + seconds.inspect if @debug
+      t = (Time.parse(rates[currency.upcase.to_sym].last) \
+          + seconds)
+      puts 't: ' + t.inspect if @debug
+      if t > Time.now then
+        rates[currency.upcase.to_sym].first
+      else
+        fetch_rate currency
+      end
+      
+    else
+      fetch_rate currency
+    end
+    
   end
+  
   
   private
   
-  def fetch_rates()
-
-    response = open(@url + @base.upcase)
-
-    if response.status.last == "OK" then
-
-      h = JSON.parse(response.read)
-      h['date'] = Time.now
-      File.write @cache_filepath, h.to_json
-      h
-
-    else
-      puts "JustExchangeRates API error %s : %s" % response.status
-      {}
-    end          
+  def fetch_rate(currency)
     
-  end
-
-end
-
-if __FILE__ == $0 then
-
-  jer = JustExchangeRates.new(base: 'USD')
-  jer.rate(VARGS.first) # e.g. GBP #=> 0.73792
+    puts 'inside fetch_rate' if @debug
+    fx = OpenExchangeRates::Rates.new(:app_id => @app_id)        
+    
+    rate = fx.convert(1, :from => "USD", :to => currency)
+    puts "currency: %s rate: %s" % [currency, rate] if @debug
+    
+    @rates[currency.upcase.to_sym] = [rate, Time.now.to_s]
+    File.write @cache_filepath, \
+        {base: @base, date: @date, rates: @rates}.to_json
+    rate
+    
+  end  
 
 end
