@@ -1,8 +1,8 @@
 Gem::Specification.new do |s|
   s.name = 'justexchangerates'
-  s.version = '0.3.0'
+  s.version = '0.3.1'
   s.summary = 'Fetches the latest exchange rates using ' + 
-      'the API from http://fixer.io/'
+      'the open_exchange_rates gem.'
   s.authors = ['James Robertson']
   s.files = Dir['lib/justexchangerates.rb']  
   s.add_runtime_dependency('chronic_duration', '~> 0.10', '>=0.10.6')
