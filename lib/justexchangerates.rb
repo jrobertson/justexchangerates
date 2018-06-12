@@ -70,9 +70,9 @@ class JustExchangeRates
     puts 'inside fetch_rate' if @debug
     puts '@app_id: ' + @app_id.inspect if @debug
     
-    fx = OpenExchangeRates::Rates.new(:app_id => @app_id)        
+    rate = OpenExchangeRates::Rates.new(app_id: @app_id)\
+        .exchange_rate(from: @base, to: currency)
     
-    rate = fx.convert(1, :from => @base, :to => currency)
     puts "currency: %s rate: %s" % [currency, rate] if @debug
     
     @rates[currency.upcase.to_sym] = [rate, Time.now.to_s]
