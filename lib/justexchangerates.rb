@@ -5,6 +5,7 @@
 require 'json'
 require 'open-uri'
 require 'chronic_duration'
+require 'dynarex-password' # used by JustExchangeRatesPlus
 require 'open_exchange_rates'
 
 
@@ -82,4 +83,35 @@ class JustExchangeRates
     
   end  
 
+end
+
+class JustExchangeRatesPlus < JustExchangeRates
+
+
+  def initialize(reg, base: 'USD', cache_refresh: '1 week', cache_path: '.', \
+                 debug: false)    
+    
+    @debug = debug
+    
+    key = 'hkey_apps/justexchangerates'
+    e = reg.get_key(key)
+    @lookup_file = e.text('lookup_file').to_s
+    
+    app_id = decipher(e.text('app_id').to_s)
+    
+    if @debug then
+      puts app_id.inspect 
+    end
+    
+    super(base: 'USD', cache_refresh: '1 week', cache_path: '.', \
+                 debug: debug, app_id: app_id)
+  end
+  
+  
+  private
+
+  def decipher(s)
+    DynarexPassword.new.reverse_lookup(s, @lookup_file)
+  end  
+  
 end
