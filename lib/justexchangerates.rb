@@ -86,6 +86,20 @@ class JustExchangeRates
 end
 
 class JustExchangeRatesPlus < JustExchangeRates
+  
+  def self.fetch_app_id(reg)
+
+    decipher = ->(lookup_file, s) {
+      DynarexPassword.new.reverse_lookup(s, lookup_file)
+    }
+    
+    key = 'hkey_apps/justexchangerates'
+    e = reg.get_key(key)
+    lookup_file = e.text('lookup_file').to_s
+    
+    app_id = decipher.call(lookup_file, e.text('app_id').to_s)   
+    
+  end
 
 
   def initialize(reg, base: 'USD', cache_refresh: '1 week', cache_path: '.', \
@@ -93,25 +107,11 @@ class JustExchangeRatesPlus < JustExchangeRates
     
     @debug = debug
     
-    key = 'hkey_apps/justexchangerates'
-    e = reg.get_key(key)
-    @lookup_file = e.text('lookup_file').to_s
-    
-    app_id = decipher(e.text('app_id').to_s)
-    
-    if @debug then
-      puts app_id.inspect 
-    end
+    app_id = JustExchangeRatesPlus.fetch_app_id(reg)
     
     super(base: 'USD', cache_refresh: '1 week', cache_path: '.', \
                  debug: debug, app_id: app_id)
   end
   
-  
-  private
-
-  def decipher(s)
-    DynarexPassword.new.reverse_lookup(s, @lookup_file)
-  end  
   
 end

@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'justexchangerates'
-  s.version = '0.4.0'
+  s.version = '0.4.1'
   s.summary = 'Fetches the latest exchange rates using ' + 
       'the open_exchange_rates gem.'
   s.authors = ['James Robertson']
